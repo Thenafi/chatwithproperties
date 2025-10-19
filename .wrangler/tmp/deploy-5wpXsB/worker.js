@@ -1,318 +1,277 @@
-// Cloudflare Worker for Hospitable Properties Viewer
-// Provides progressive loading, search, selection, clipboard functionality, and basic authentication
+(() => {
+  var __defProp = Object.defineProperty;
+  var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
 
-addEventListener("fetch", (event) => {
-  event.respondWith(handleRequest(event.request));
-});
-
-async function handleRequest(request) {
-  const url = new URL(request.url);
-
-  // Handle login form submission
-  if (url.pathname === "/login" && request.method === "POST") {
-    return handleLogin(request);
-  }
-
-  // Public routes (no authentication required)
-  if (url.pathname === "/login" || url.pathname === "/styles.css") {
-    return handlePublicRoutes(request);
-  }
-
-  // Check authentication for all other routes
-  const authResult = await checkAuthentication(request);
-  if (!authResult.authenticated) {
-    return authResult.response;
-  }
-
-  // Authenticated routes
-  if (url.pathname === "/" || url.pathname === "/index.html") {
-    return getFileResponse("index.html");
-  }
-
-  if (url.pathname === "/app.js") {
-    return getFileResponse("app.js");
-  }
-
-  if (url.pathname === "/api/properties") {
-    return handlePropertiesAPI(request);
-  }
-
-  if (url.pathname.startsWith("/api/property/")) {
-    return handlePropertyDetailsAPI(request);
-  }
-
-  return new Response("Not Found", { status: 404 });
-}
-
-// Authentication functions
-async function checkAuthentication(request) {
-  const cookies = parseCookies(request.headers.get("Cookie") || "");
-  const sessionToken = cookies["session_token"];
-
-  if (!sessionToken || sessionToken !== getValidSessionToken()) {
-    // Redirect to login page
-    return {
-      authenticated: false,
-      response: new Response("", {
-        status: 302,
-        headers: {
-          Location: "/login",
-        },
-      }),
-    };
-  }
-
-  return { authenticated: true };
-}
-
-async function handleLogin(request) {
-  try {
-    const formData = await request.formData();
-    const username = formData.get("username");
-    const password = formData.get("password");
-
-    // Check credentials
-    if (!AUTH_USERNAME || !AUTH_PASSWORD) {
-      return new Response("", {
-        status: 302,
-        headers: {
-          Location: "/login?error=config",
-        },
-      });
-    }
-
-    if (username === AUTH_USERNAME && password === AUTH_PASSWORD) {
-      // Create session token
-      const sessionToken = getValidSessionToken();
-
-      return new Response("", {
-        status: 302,
-        headers: {
-          Location: "/",
-          "Set-Cookie": `session_token=${sessionToken}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=86400`,
-        },
-      });
-    } else {
-      return new Response("", {
-        status: 302,
-        headers: {
-          Location: "/login?error=invalid",
-        },
-      });
-    }
-  } catch (error) {
-    return new Response("", {
-      status: 302,
-      headers: {
-        Location: "/login?error=error",
-      },
-    });
-  }
-}
-
-function parseCookies(cookieHeader) {
-  const cookies = {};
-  if (cookieHeader) {
-    cookieHeader.split(";").forEach((cookie) => {
-      const [name, value] = cookie.trim().split("=");
-      if (name && value) {
-        cookies[name] = decodeURIComponent(value);
-      }
-    });
-  }
-  return cookies;
-}
-
-function getValidSessionToken() {
-  // Generate a simple session token based on credentials and date
-  // In production, you'd want something more secure
-  const today = new Date().toDateString();
-  return btoa(`${AUTH_USERNAME}:${today}`).replace(/[^a-zA-Z0-9]/g, "");
-}
-
-async function handlePublicRoutes(request) {
-  const url = new URL(request.url);
-
-  if (url.pathname === "/login") {
-    return getFileResponse("login.html");
-  }
-
-  if (url.pathname === "/styles.css") {
-    return getFileResponse("styles.css");
-  }
-
-  return new Response("Not Found", { status: 404 });
-}
-
-function getFileResponse(filename) {
-  const content = getFileContent(filename);
-  const contentType = getContentType(filename);
-
-  return new Response(content, {
-    headers: { "Content-Type": contentType },
+  // worker.js
+  addEventListener("fetch", (event) => {
+    event.respondWith(handleRequest(event.request));
   });
-}
-
-function getContentType(filename) {
-  if (filename.endsWith(".html")) return "text/html";
-  if (filename.endsWith(".css")) return "text/css";
-  if (filename.endsWith(".js")) return "application/javascript";
-  return "text/plain";
-}
-
-async function handlePropertiesAPI(request) {
-  const url = new URL(request.url);
-  const page = url.searchParams.get("page") || "1";
-  const perPage = url.searchParams.get("per_page") || "50";
-
-  try {
-    // Check if API token exists
-    if (!HOSPITABLE_API_TOKEN) {
+  async function handleRequest(request) {
+    const url = new URL(request.url);
+    if (url.pathname === "/login" && request.method === "POST") {
+      return handleLogin(request);
+    }
+    if (url.pathname === "/login" || url.pathname === "/styles.css") {
+      return handlePublicRoutes(request);
+    }
+    const authResult = await checkAuthentication(request);
+    if (!authResult.authenticated) {
+      return authResult.response;
+    }
+    if (url.pathname === "/" || url.pathname === "/index.html") {
+      return getFileResponse("index.html");
+    }
+    if (url.pathname === "/app.js") {
+      return getFileResponse("app.js");
+    }
+    if (url.pathname === "/api/properties") {
+      return handlePropertiesAPI(request);
+    }
+    if (url.pathname.startsWith("/api/property/")) {
+      return handlePropertyDetailsAPI(request);
+    }
+    return new Response("Not Found", { status: 404 });
+  }
+  __name(handleRequest, "handleRequest");
+  async function checkAuthentication(request) {
+    const cookies = parseCookies(request.headers.get("Cookie") || "");
+    const sessionToken = cookies["session_token"];
+    if (!sessionToken || sessionToken !== getValidSessionToken()) {
+      return {
+        authenticated: false,
+        response: new Response("", {
+          status: 302,
+          headers: {
+            Location: "/login"
+          }
+        })
+      };
+    }
+    return { authenticated: true };
+  }
+  __name(checkAuthentication, "checkAuthentication");
+  async function handleLogin(request) {
+    try {
+      const formData = await request.formData();
+      const username = formData.get("username");
+      const password = formData.get("password");
+      if (!AUTH_USERNAME || !AUTH_PASSWORD) {
+        return new Response("", {
+          status: 302,
+          headers: {
+            Location: "/login?error=config"
+          }
+        });
+      }
+      if (username === AUTH_USERNAME && password === AUTH_PASSWORD) {
+        const sessionToken = getValidSessionToken();
+        return new Response("", {
+          status: 302,
+          headers: {
+            Location: "/",
+            "Set-Cookie": `session_token=${sessionToken}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=86400`
+          }
+        });
+      } else {
+        return new Response("", {
+          status: 302,
+          headers: {
+            Location: "/login?error=invalid"
+          }
+        });
+      }
+    } catch (error) {
+      return new Response("", {
+        status: 302,
+        headers: {
+          Location: "/login?error=error"
+        }
+      });
+    }
+  }
+  __name(handleLogin, "handleLogin");
+  function parseCookies(cookieHeader) {
+    const cookies = {};
+    if (cookieHeader) {
+      cookieHeader.split(";").forEach((cookie) => {
+        const [name, value] = cookie.trim().split("=");
+        if (name && value) {
+          cookies[name] = decodeURIComponent(value);
+        }
+      });
+    }
+    return cookies;
+  }
+  __name(parseCookies, "parseCookies");
+  function getValidSessionToken() {
+    const today = (/* @__PURE__ */ new Date()).toDateString();
+    return btoa(`${AUTH_USERNAME}:${today}`).replace(/[^a-zA-Z0-9]/g, "");
+  }
+  __name(getValidSessionToken, "getValidSessionToken");
+  async function handlePublicRoutes(request) {
+    const url = new URL(request.url);
+    if (url.pathname === "/login") {
+      return getFileResponse("login.html");
+    }
+    if (url.pathname === "/styles.css") {
+      return getFileResponse("styles.css");
+    }
+    return new Response("Not Found", { status: 404 });
+  }
+  __name(handlePublicRoutes, "handlePublicRoutes");
+  function getFileResponse(filename) {
+    const content = getFileContent(filename);
+    const contentType = getContentType(filename);
+    return new Response(content, {
+      headers: { "Content-Type": contentType }
+    });
+  }
+  __name(getFileResponse, "getFileResponse");
+  function getContentType(filename) {
+    if (filename.endsWith(".html")) return "text/html";
+    if (filename.endsWith(".css")) return "text/css";
+    if (filename.endsWith(".js")) return "application/javascript";
+    return "text/plain";
+  }
+  __name(getContentType, "getContentType");
+  async function handlePropertiesAPI(request) {
+    const url = new URL(request.url);
+    const page = url.searchParams.get("page") || "1";
+    const perPage = url.searchParams.get("per_page") || "50";
+    try {
+      if (!HOSPITABLE_API_TOKEN) {
+        return new Response(
+          JSON.stringify({
+            error: "API_TOKEN_MISSING",
+            message: "Hospitable API token not configured. Please set the HOSPITABLE_API_TOKEN secret in Cloudflare Workers."
+          }),
+          {
+            status: 500,
+            headers: { "Content-Type": "application/json" }
+          }
+        );
+      }
+      const apiUrl = `https://public.api.hospitable.com/v2/properties?page=${page}&per_page=${perPage}`;
+      const response = await fetch(apiUrl, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${HOSPITABLE_API_TOKEN}`
+        }
+      });
+      if (!response.ok) {
+        let errorMessage = "API request failed";
+        let errorType = "API_ERROR";
+        if (response.status === 401) {
+          errorType = "AUTHENTICATION_ERROR";
+          errorMessage = "Authentication failed. Please check your API token.";
+        } else if (response.status === 403) {
+          errorType = "AUTHORIZATION_ERROR";
+          errorMessage = "Access forbidden. Please check your API permissions.";
+        } else if (response.status === 429) {
+          errorType = "RATE_LIMIT_ERROR";
+          errorMessage = "Rate limit exceeded. Please try again later.";
+        }
+        return new Response(
+          JSON.stringify({
+            error: errorType,
+            message: errorMessage,
+            status: response.status
+          }),
+          {
+            status: response.status,
+            headers: { "Content-Type": "application/json" }
+          }
+        );
+      }
+      const data = await response.json();
+      return new Response(JSON.stringify(data), {
+        headers: { "Content-Type": "application/json" }
+      });
+    } catch (error) {
       return new Response(
         JSON.stringify({
-          error: "API_TOKEN_MISSING",
-          message:
-            "Hospitable API token not configured. Please set the HOSPITABLE_API_TOKEN secret in Cloudflare Workers.",
+          error: "NETWORK_ERROR",
+          message: "Failed to connect to Hospitable API. Please check your internet connection.",
+          details: error.message
         }),
         {
           status: 500,
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json" }
         }
       );
     }
-
-    const apiUrl = `https://public.api.hospitable.com/v2/properties?page=${page}&per_page=${perPage}`;
-    const response = await fetch(apiUrl, {
-      method: "GET",
-      headers: {
-        Accept: "application/json",
-        Authorization: `Bearer ${HOSPITABLE_API_TOKEN}`,
-      },
-    });
-
-    if (!response.ok) {
-      let errorMessage = "API request failed";
-      let errorType = "API_ERROR";
-
-      if (response.status === 401) {
-        errorType = "AUTHENTICATION_ERROR";
-        errorMessage = "Authentication failed. Please check your API token.";
-      } else if (response.status === 403) {
-        errorType = "AUTHORIZATION_ERROR";
-        errorMessage = "Access forbidden. Please check your API permissions.";
-      } else if (response.status === 429) {
-        errorType = "RATE_LIMIT_ERROR";
-        errorMessage = "Rate limit exceeded. Please try again later.";
-      }
-
-      return new Response(
-        JSON.stringify({
-          error: errorType,
-          message: errorMessage,
-          status: response.status,
-        }),
-        {
-          status: response.status,
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-    }
-
-    const data = await response.json();
-    return new Response(JSON.stringify(data), {
-      headers: { "Content-Type": "application/json" },
-    });
-  } catch (error) {
-    return new Response(
-      JSON.stringify({
-        error: "NETWORK_ERROR",
-        message:
-          "Failed to connect to Hospitable API. Please check your internet connection.",
-        details: error.message,
-      }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      }
-    );
   }
-}
-
-async function handlePropertyDetailsAPI(request) {
-  const url = new URL(request.url);
-  const propertyId = url.pathname.split("/").pop();
-
-  try {
-    if (!HOSPITABLE_API_TOKEN) {
+  __name(handlePropertiesAPI, "handlePropertiesAPI");
+  async function handlePropertyDetailsAPI(request) {
+    const url = new URL(request.url);
+    const propertyId = url.pathname.split("/").pop();
+    try {
+      if (!HOSPITABLE_API_TOKEN) {
+        return new Response(
+          JSON.stringify({
+            error: "API_TOKEN_MISSING",
+            message: "Hospitable API token not configured."
+          }),
+          {
+            status: 500,
+            headers: { "Content-Type": "application/json" }
+          }
+        );
+      }
+      const apiUrl = `https://public.api.hospitable.com/v2/properties/${propertyId}?include=listings,details`;
+      const response = await fetch(apiUrl, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${HOSPITABLE_API_TOKEN}`
+        }
+      });
+      if (!response.ok) {
+        let errorMessage = "Failed to fetch property details";
+        let errorType = "API_ERROR";
+        if (response.status === 401) {
+          errorType = "AUTHENTICATION_ERROR";
+          errorMessage = "Authentication failed. Please check your API token.";
+        } else if (response.status === 404) {
+          errorType = "NOT_FOUND_ERROR";
+          errorMessage = "Property not found.";
+        }
+        return new Response(
+          JSON.stringify({
+            error: errorType,
+            message: errorMessage,
+            status: response.status
+          }),
+          {
+            status: response.status,
+            headers: { "Content-Type": "application/json" }
+          }
+        );
+      }
+      const data = await response.json();
+      return new Response(JSON.stringify(data), {
+        headers: { "Content-Type": "application/json" }
+      });
+    } catch (error) {
       return new Response(
         JSON.stringify({
-          error: "API_TOKEN_MISSING",
-          message: "Hospitable API token not configured.",
+          error: "NETWORK_ERROR",
+          message: "Failed to fetch property details.",
+          details: error.message
         }),
         {
           status: 500,
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json" }
         }
       );
     }
-
-    const apiUrl = `https://public.api.hospitable.com/v2/properties/${propertyId}?include=listings,details`;
-    const response = await fetch(apiUrl, {
-      method: "GET",
-      headers: {
-        Accept: "application/json",
-        Authorization: `Bearer ${HOSPITABLE_API_TOKEN}`,
-      },
-    });
-
-    if (!response.ok) {
-      let errorMessage = "Failed to fetch property details";
-      let errorType = "API_ERROR";
-
-      if (response.status === 401) {
-        errorType = "AUTHENTICATION_ERROR";
-        errorMessage = "Authentication failed. Please check your API token.";
-      } else if (response.status === 404) {
-        errorType = "NOT_FOUND_ERROR";
-        errorMessage = "Property not found.";
-      }
-
-      return new Response(
-        JSON.stringify({
-          error: errorType,
-          message: errorMessage,
-          status: response.status,
-        }),
-        {
-          status: response.status,
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-    }
-
-    const data = await response.json();
-    return new Response(JSON.stringify(data), {
-      headers: { "Content-Type": "application/json" },
-    });
-  } catch (error) {
-    return new Response(
-      JSON.stringify({
-        error: "NETWORK_ERROR",
-        message: "Failed to fetch property details.",
-        details: error.message,
-      }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      }
-    );
   }
-}
-
-function getFileContent(filename) {
-  switch (filename) {
-    case "index.html":
-      return `<!DOCTYPE html>
+  __name(handlePropertyDetailsAPI, "handlePropertyDetailsAPI");
+  function getFileContent(filename) {
+    switch (filename) {
+      case "index.html":
+        return `<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -323,7 +282,7 @@ function getFileContent(filename) {
   <body>
     <div class="container">
       <div class="header">
-        <h1>🏠 Hospitable Properties Viewer</h1>
+        <h1>\u{1F3E0} Hospitable Properties Viewer</h1>
         <p>
           Browse, search, and export property data to chat with AI (ChatGPT,
           Claude, etc.)
@@ -348,7 +307,7 @@ function getFileContent(filename) {
             id="selectAllButton"
             onclick="selectAllVisible()"
           >
-            ☑️ Select All
+            \u2611\uFE0F Select All
           </button>
           <button
             class="btn btn-secondary"
@@ -356,7 +315,7 @@ function getFileContent(filename) {
             onclick="deselectAll()"
             style="display: none"
           >
-            ☐ Deselect All
+            \u2610 Deselect All
           </button>
           <button
             class="btn btn-success"
@@ -364,7 +323,7 @@ function getFileContent(filename) {
             onclick="copySelectedProperties()"
             disabled
           >
-            📋 Copy Selected to Clipboard
+            \u{1F4CB} Copy Selected to Clipboard
           </button>
         </div>
       </div>
@@ -392,13 +351,12 @@ function getFileContent(filename) {
       </div>
     </div>
 
-    <script src="/app.js"></script>
+    <script src="/app.js"><\/script>
   </body>
 </html>
 `;
-
-    case "login.html":
-      return `<!DOCTYPE html>
+      case "login.html":
+        return `<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -409,7 +367,7 @@ function getFileContent(filename) {
   <body>
     <div class="auth-container">
       <form class="auth-form" method="POST" action="/login">
-        <h2>🏠 Properties Viewer</h2>
+        <h2>\u{1F3E0} Properties Viewer</h2>
         <p>Please login to access the properties dashboard</p>
 
         <div id="authError" class="auth-error" style="display: none"></div>
@@ -438,13 +396,12 @@ function getFileContent(filename) {
           "Invalid username or password. Please try again.";
         errorDiv.style.display = "block";
       }
-    </script>
+    <\/script>
   </body>
 </html>
 `;
-
-    case "app.js":
-      return `// Application state
+      case "app.js":
+        return `// Application state
 let allProperties = [];
 let filteredProperties = [];
 let selectedProperties = new Set();
@@ -698,17 +655,17 @@ function createPropertyCard(property) {
                 </div>
                 
                 <div class="property-specs">
-                    <span>🏠 \${property.property_type || "N/A"}</span>
-                    <span>🛏️ \${property.capacity?.bedrooms || 0}br</span>
-                    <span>🛁 \${property.capacity?.bathrooms || 0}ba</span>
+                    <span>\u{1F3E0} \${property.property_type || "N/A"}</span>
+                    <span>\u{1F6CF}\uFE0F \${property.capacity?.bedrooms || 0}br</span>
+                    <span>\u{1F6C1} \${property.capacity?.bathrooms || 0}ba</span>
                 </div>
                 
                 <div class="property-address-compact">
-                    📍 \${property.address?.display || "Address not available"}
+                    \u{1F4CD} \${property.address?.display || "Address not available"}
                 </div>
                 
                 <div class="property-details-status">
-                    \${property._detailsLoaded ? '<span class="details-loaded">✅ Full Details</span>' : ''}
+                    \${property._detailsLoaded ? '<span class="details-loaded">\u2705 Full Details</span>' : ''}
                 </div>
             </div>
         </div>
@@ -802,7 +759,7 @@ async function copySelectedProperties() {
 
     // Visual feedback
     const originalText = copyButton.textContent;
-    copyButton.textContent = "✅ Copied!";
+    copyButton.textContent = "\u2705 Copied!";
     hideLoading();
 
     setTimeout(() => {
@@ -840,7 +797,7 @@ function showCompletionMessage() {
   progressInfo.style.display = "block";
   progressInfo.style.backgroundColor = "#d4edda";
   progressInfo.style.color = "#155724";
-  progressText.textContent = \`✅ All \${totalProperties} properties loaded successfully!\`;
+  progressText.textContent = \`\u2705 All \${totalProperties} properties loaded successfully!\`;
 
   // Hide after 3 seconds
   setTimeout(() => {
@@ -889,9 +846,8 @@ function debounce(func, wait) {
   };
 }
 `;
-
-    case "styles.css":
-      return `* {
+      case "styles.css":
+        return `* {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
@@ -1311,8 +1267,10 @@ body {
   }
 }
 `;
-
-    default:
-      return "File not found";
+      default:
+        return "File not found";
+    }
   }
-}
+  __name(getFileContent, "getFileContent");
+})();
+//# sourceMappingURL=worker.js.map

@@ -25,17 +25,32 @@
           type="text"
           class="search-box"
           id="searchBox"
-          placeholder="Search properties by name or location/area..."
+          placeholder="Search by property name or address..."
         />
         <div class="selection-info">
           <span id="selectedCount">0 selected</span>
+          <button
+            class="btn btn-secondary"
+            id="selectAllButton"
+            onclick="selectAllVisible()"
+          >
+            ☑️ Select All
+          </button>
+          <button
+            class="btn btn-secondary"
+            id="deselectAllButton"
+            onclick="deselectAll()"
+            style="display: none"
+          >
+            ☐ Deselect All
+          </button>
           <button
             class="btn btn-success"
             id="copyButton"
             onclick="copySelectedProperties()"
             disabled
           >
-            📋 Copy Selected Details
+            📋 Copy Selected to Clipboard
           </button>
         </div>
       </div>
