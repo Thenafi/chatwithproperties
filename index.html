@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hospitable Properties Viewer</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>🏠 Hospitable Properties Viewer</h1>
+        <p>
+          Browse, search, and export property data to chat with AI (ChatGPT,
+          Claude, etc.)
+        </p>
+      </div>
+
+      <div class="error-banner" id="errorBanner">
+        <strong>Error:</strong> <span id="errorMessage"></span>
+      </div>
+
+      <div class="controls">
+        <input
+          type="text"
+          class="search-box"
+          id="searchBox"
+          placeholder="Search properties by name or location/area..."
+        />
+        <div class="selection-info">
+          <span id="selectedCount">0 selected</span>
+          <button
+            class="btn btn-success"
+            id="copyButton"
+            onclick="copySelectedProperties()"
+            disabled
+          >
+            📋 Copy Selected Details
+          </button>
+        </div>
+      </div>
+
+      <div class="progress-info" id="progressInfo" style="display: none">
+        <div class="loading-spinner"></div>
+        <p id="progressText">Loading properties...</p>
+      </div>
+
+      <div class="properties-grid" id="propertiesGrid"></div>
+
+      <div class="load-more" id="loadMoreContainer" style="display: none">
+        <button
+          class="btn btn-primary"
+          id="loadMoreBtn"
+          onclick="loadMoreProperties()"
+        >
+          Load More Properties
+        </button>
+      </div>
+
+      <div class="no-results" id="noResults" style="display: none">
+        <h3>No properties found</h3>
+        <p>Try adjusting your search criteria or check the API connection.</p>
+      </div>
+    </div>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

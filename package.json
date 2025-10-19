@@ -1,0 +1,23 @@
+{
+    "name": "hospitable-properties-viewer",
+    "version": "1.0.0",
+    "description": "Cloudflare Worker for viewing Hospitable properties with progressive loading and search",
+    "main": "worker.js",
+    "scripts": {
+        "deploy": "wrangler deploy",
+        "dev": "wrangler dev",
+        "preview": "wrangler preview"
+    },
+    "keywords": [
+        "cloudflare",
+        "worker",
+        "hospitable",
+        "properties",
+        "api"
+    ],
+    "author": "",
+    "license": "MIT",
+    "devDependencies": {
+        "wrangler": "^3.0.0"
+    }
+}

@@ -1,0 +1,11 @@
+name = "hospitable-properties-viewer"
+main = "worker.js"
+compatibility_date = "2024-10-19"
+
+[vars]
+# Add any public environment variables here
+
+# For secrets, use the following commands:
+# wrangler secret put HOSPITABLE_API_TOKEN    # Your Hospitable API Bearer token
+# wrangler secret put AUTH_USERNAME           # Username for basic auth (e.g., "admin")  
+# wrangler secret put AUTH_PASSWORD           # Password for basic auth (e.g., "your-secure-password")
