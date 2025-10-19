@@ -359,12 +359,112 @@ function getFileContent(filename) {
             ☐ Deselect All
           </button>
           <button
+            class="btn btn-warning"
+            id="clearButton"
+            onclick="clearSelection()"
+            style="display: none"
+          >
+            🗑️ Clear
+          </button>
+          <button
             class="btn btn-success"
             id="copyButton"
             onclick="copySelectedProperties()"
             disabled
           >
-            📋 Copy Selected to Clipboard
+            📋 Copy to Clipboard
+          </button>
+        </div>
+      </div>
+
+      <div class="bulk-actions" id="bulkActions" style="display: none">
+        <p class="bulk-actions-label">
+          🔗 Open Selected Properties in Hospitable:
+        </p>
+        <div class="bulk-actions-buttons">
+          <button
+            class="btn btn-link btn-sm"
+            onclick="openSelectedLinks('details')"
+            title="Property Details"
+          >
+            📋 Details
+          </button>
+          <button
+            class="btn btn-link btn-sm"
+            onclick="openSelectedLinks('pricing')"
+            title="Pricing"
+          >
+            💰 Pricing
+          </button>
+          <button
+            class="btn btn-link btn-sm"
+            onclick="openSelectedLinks('availability-rules')"
+            title="Availability"
+          >
+            📅 Availability
+          </button>
+          <button
+            class="btn btn-link btn-sm"
+            onclick="openSelectedLinks('direct')"
+            title="Direct Booking"
+          >
+            🔗 Direct
+          </button>
+          <button
+            class="btn btn-link btn-sm"
+            onclick="openSelectedLinks('messaging-rules')"
+            title="Messaging Rules"
+          >
+            💬 Messaging
+          </button>
+          <button
+            class="btn btn-link btn-sm"
+            onclick="openSelectedLinks('review-rules')"
+            title="Review Rules"
+          >
+            ⭐ Reviews
+          </button>
+          <button
+            class="btn btn-link btn-sm"
+            onclick="openSelectedLinks('team')"
+            title="Team"
+          >
+            👥 Team
+          </button>
+          <button
+            class="btn btn-link btn-sm"
+            onclick="openSelectedLinks('notification-rules')"
+            title="Notifications"
+          >
+            🔔 Notifications
+          </button>
+          <button
+            class="btn btn-link btn-sm"
+            onclick="openSelectedLinks('task-rules')"
+            title="Task Rules"
+          >
+            ✅ Tasks
+          </button>
+          <button
+            class="btn btn-link btn-sm"
+            onclick="openSelectedLinks('custom-codes')"
+            title="Custom Codes"
+          >
+            🔐 Codes
+          </button>
+          <button
+            class="btn btn-link btn-sm"
+            onclick="openSelectedLinks('canned-responses')"
+            title="Canned Responses"
+          >
+            💭 Responses
+          </button>
+          <button
+            class="btn btn-link btn-sm"
+            onclick="openSelectedLinks('merge-match')"
+            title="Merge & Match"
+          >
+            🔀 Merge
           </button>
         </div>
       </div>
@@ -461,6 +561,8 @@ const selectedCount = document.getElementById("selectedCount");
 const copyButton = document.getElementById("copyButton");
 const selectAllButton = document.getElementById("selectAllButton");
 const deselectAllButton = document.getElementById("deselectAllButton");
+const clearButton = document.getElementById("clearButton");
+const bulkActions = document.getElementById("bulkActions");
 const loadMoreBtn = document.getElementById("loadMoreBtn");
 const loadMoreContainer = document.getElementById("loadMoreContainer");
 const progressInfo = document.getElementById("progressInfo");
@@ -650,7 +752,6 @@ function createPropertyCard(property) {
                             ? \`<span class="property-name-compact">\${property.public_name}</span>\`
                             : ""
                         }
-                        <span class="property-status \${statusClass}">\${statusText}</span>
                     </div>
                 </div>
                 
@@ -662,6 +763,49 @@ function createPropertyCard(property) {
                 
                 <div class="property-address-compact">
                     📍 \${property.address?.display || "Address not available"}
+                </div>
+                
+                <div class="property-quick-links">
+                    <a href="https://my.hospitable.com/properties/property/\${
+                      property.id
+                    }/details/overview" target="_blank" class="btn-tiny" tabindex="-1" title="Details">📋</a>
+                    <a href="https://my.hospitable.com/properties/property/\${
+                      property.id
+                    }/pricing" target="_blank" class="btn-tiny" tabindex="-1" title="Pricing">💰</a>
+                    <a href="https://my.hospitable.com/properties/property/\${
+                      property.id
+                    }/availability-rules" target="_blank" class="btn-tiny" tabindex="-1" title="Availability">📅</a>
+                    <a href="https://my.hospitable.com/properties/property/\${
+                      property.id
+                    }/direct" target="_blank" class="btn-tiny" tabindex="-1" title="Direct">🔗</a>
+                    <a href="https://my.hospitable.com/properties/property/\${
+                      property.id
+                    }/messaging-rules" target="_blank" class="btn-tiny" tabindex="-1" title="Messaging">💬</a>
+                    <a href="https://my.hospitable.com/properties/property/\${
+                      property.id
+                    }/review-rules" target="_blank" class="btn-tiny" tabindex="-1" title="Reviews">⭐</a>
+                    <a href="https://my.hospitable.com/properties/property/\${
+                      property.id
+                    }/team" target="_blank" class="btn-tiny" tabindex="-1" title="Team">👥</a>
+                    <a href="https://my.hospitable.com/properties/property/\${
+                      property.id
+                    }/notification-rules" target="_blank" class="btn-tiny" tabindex="-1" title="Notifications">🔔</a>
+                    <a href="https://my.hospitable.com/properties/property/\${
+                      property.id
+                    }/task-rules" target="_blank" class="btn-tiny" tabindex="-1" title="Tasks">✅</a>
+                    <a href="https://my.hospitable.com/properties/property/\${
+                      property.id
+                    }/custom-codes" target="_blank" class="btn-tiny" tabindex="-1" title="Codes">🔐</a>
+                    <a href="https://my.hospitable.com/properties/property/\${
+                      property.id
+                    }/canned-responses" target="_blank" class="btn-tiny" tabindex="-1" title="Responses">💭</a>
+                    <a href="https://my.hospitable.com/properties/property/\${
+                      property.id
+                    }/merge-match" target="_blank" class="btn-tiny" tabindex="-1" title="Merge">�</a>
+                </div>
+                
+                <div class="property-status-right">
+                    <span class="property-status \${statusClass}">\${statusText}</span>
                 </div>
             </div>
         </div>
@@ -686,6 +830,10 @@ function updateSelectionUI() {
   const count = selectedProperties.size;
   selectedCount.textContent = \`\${count} selected\`;
   copyButton.disabled = count === 0;
+
+  // Show/hide bulk actions and clear button
+  bulkActions.style.display = count > 0 ? "block" : "none";
+  clearButton.style.display = count > 0 ? "inline-block" : "none";
 
   // Show/hide select/deselect all buttons
   const visibleProperties =
@@ -737,6 +885,52 @@ function selectAllVisible() {
 function deselectAll() {
   selectedProperties.clear();
   updateSelectionUI();
+}
+
+// Clear selection (alias for deselectAll)
+function clearSelection() {
+  selectedProperties.clear();
+  updateSelectionUI();
+}
+
+// Open selected properties in Hospitable
+function openSelectedLinks(linkType) {
+  if (selectedProperties.size === 0) return;
+
+  const selectedData = allProperties.filter((property) =>
+    selectedProperties.has(property.id)
+  );
+
+  const linkMap = {
+    details: "details/overview",
+    pricing: "pricing",
+    "availability-rules": "availability-rules",
+    direct: "direct",
+    "messaging-rules": "messaging-rules",
+    "review-rules": "review-rules",
+    team: "team",
+    "notification-rules": "notification-rules",
+    "task-rules": "task-rules",
+    "custom-codes": "custom-codes",
+    "canned-responses": "canned-responses",
+    "merge-match": "merge-match",
+  };
+
+  const urlPath = linkMap[linkType];
+  if (!urlPath) return;
+
+  // Confirm if opening many tabs
+  if (selectedData.length > 10) {
+    const confirm = window.confirm(
+      \`This will open \${selectedData.length} new tabs. Continue?\`
+    );
+    if (!confirm) return;
+  }
+
+  selectedData.forEach((property) => {
+    const url = \`https://my.hospitable.com/properties/property/\${property.id}/\${urlPath}\`;
+    window.open(url, "_blank");
+  });
 }
 
 // Copy selected properties to clipboard
@@ -841,6 +1035,7 @@ function debounce(func, wait) {
     timeout = setTimeout(later, wait);
   };
 }
+
 `;
 
     case "styles.css":
@@ -858,7 +1053,7 @@ body {
 }
 
 .container {
-  max-width: 1200px;
+  max-width: 1600px;
   margin: 0 auto;
   padding: 20px;
 }
@@ -934,6 +1129,15 @@ body {
 .btn-success:disabled {
   background-color: #bdc3c7;
   cursor: not-allowed;
+}
+
+.btn-warning {
+  background-color: #f39c12;
+  color: white;
+}
+
+.btn-warning:hover {
+  background-color: #e67e22;
 }
 
 .btn-secondary {
@@ -1029,7 +1233,7 @@ body {
 
 .property-row {
   display: grid;
-  grid-template-columns: 2fr 1fr 2fr;
+  grid-template-columns: 2fr 1fr 2fr auto auto;
   gap: 15px;
   align-items: center;
 }
@@ -1081,6 +1285,80 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.property-status-right {
+  text-align: right;
+}
+
+.property-quick-links {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.btn-tiny {
+  display: inline-block;
+  padding: 3px 5px;
+  font-size: 13px;
+  text-decoration: none;
+  border-radius: 3px;
+  background-color: #f0f0f0;
+  border: 1px solid #ddd;
+  transition: all 0.2s;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.btn-tiny:hover {
+  background-color: #3498db;
+  color: white;
+  border-color: #3498db;
+  transform: scale(1.15);
+}
+
+.bulk-actions {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+}
+
+.bulk-actions-label {
+  font-weight: 600;
+  color: white;
+  margin-bottom: 12px;
+  font-size: 16px;
+}
+
+.bulk-actions-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.btn-link {
+  background-color: white;
+  color: #667eea;
+  font-size: 13px;
+  border: 2px solid white;
+  font-weight: 600;
+}
+
+.btn-link:hover {
+  background-color: #667eea;
+  color: white;
+  border-color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.btn-sm {
+  padding: 8px 12px;
+  font-size: 13px;
 }
 
 .property-details-status {

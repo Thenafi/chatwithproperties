@@ -45,12 +45,112 @@
             ☐ Deselect All
           </button>
           <button
+            class="btn btn-warning"
+            id="clearButton"
+            onclick="clearSelection()"
+            style="display: none"
+          >
+            🗑️ Clear
+          </button>
+          <button
             class="btn btn-success"
             id="copyButton"
             onclick="copySelectedProperties()"
             disabled
           >
-            📋 Copy Selected to Clipboard
+            📋 Copy to Clipboard
+          </button>
+        </div>
+      </div>
+
+      <div class="bulk-actions" id="bulkActions" style="display: none">
+        <p class="bulk-actions-label">
+          🔗 Open Selected Properties in Hospitable:
+        </p>
+        <div class="bulk-actions-buttons">
+          <button
+            class="btn btn-link btn-sm"
+            onclick="openSelectedLinks('details')"
+            title="Property Details"
+          >
+            📋 Details
+          </button>
+          <button
+            class="btn btn-link btn-sm"
+            onclick="openSelectedLinks('pricing')"
+            title="Pricing"
+          >
+            💰 Pricing
+          </button>
+          <button
+            class="btn btn-link btn-sm"
+            onclick="openSelectedLinks('availability-rules')"
+            title="Availability"
+          >
+            📅 Availability
+          </button>
+          <button
+            class="btn btn-link btn-sm"
+            onclick="openSelectedLinks('direct')"
+            title="Direct Booking"
+          >
+            🔗 Direct
+          </button>
+          <button
+            class="btn btn-link btn-sm"
+            onclick="openSelectedLinks('messaging-rules')"
+            title="Messaging Rules"
+          >
+            💬 Messaging
+          </button>
+          <button
+            class="btn btn-link btn-sm"
+            onclick="openSelectedLinks('review-rules')"
+            title="Review Rules"
+          >
+            ⭐ Reviews
+          </button>
+          <button
+            class="btn btn-link btn-sm"
+            onclick="openSelectedLinks('team')"
+            title="Team"
+          >
+            👥 Team
+          </button>
+          <button
+            class="btn btn-link btn-sm"
+            onclick="openSelectedLinks('notification-rules')"
+            title="Notifications"
+          >
+            🔔 Notifications
+          </button>
+          <button
+            class="btn btn-link btn-sm"
+            onclick="openSelectedLinks('task-rules')"
+            title="Task Rules"
+          >
+            ✅ Tasks
+          </button>
+          <button
+            class="btn btn-link btn-sm"
+            onclick="openSelectedLinks('custom-codes')"
+            title="Custom Codes"
+          >
+            🔐 Codes
+          </button>
+          <button
+            class="btn btn-link btn-sm"
+            onclick="openSelectedLinks('canned-responses')"
+            title="Canned Responses"
+          >
+            💭 Responses
+          </button>
+          <button
+            class="btn btn-link btn-sm"
+            onclick="openSelectedLinks('merge-match')"
+            title="Merge & Match"
+          >
+            🔀 Merge
           </button>
         </div>
       </div>

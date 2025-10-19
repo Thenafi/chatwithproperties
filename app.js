@@ -15,6 +15,8 @@ const selectedCount = document.getElementById("selectedCount");
 const copyButton = document.getElementById("copyButton");
 const selectAllButton = document.getElementById("selectAllButton");
 const deselectAllButton = document.getElementById("deselectAllButton");
+const clearButton = document.getElementById("clearButton");
+const bulkActions = document.getElementById("bulkActions");
 const loadMoreBtn = document.getElementById("loadMoreBtn");
 const loadMoreContainer = document.getElementById("loadMoreContainer");
 const progressInfo = document.getElementById("progressInfo");
@@ -204,7 +206,6 @@ function createPropertyCard(property) {
                             ? `<span class="property-name-compact">${property.public_name}</span>`
                             : ""
                         }
-                        <span class="property-status ${statusClass}">${statusText}</span>
                     </div>
                 </div>
                 
@@ -216,6 +217,49 @@ function createPropertyCard(property) {
                 
                 <div class="property-address-compact">
                     📍 ${property.address?.display || "Address not available"}
+                </div>
+                
+                <div class="property-quick-links">
+                    <a href="https://my.hospitable.com/properties/property/${
+                      property.id
+                    }/details/overview" target="_blank" class="btn-tiny" tabindex="-1" title="Details">📋</a>
+                    <a href="https://my.hospitable.com/properties/property/${
+                      property.id
+                    }/pricing" target="_blank" class="btn-tiny" tabindex="-1" title="Pricing">💰</a>
+                    <a href="https://my.hospitable.com/properties/property/${
+                      property.id
+                    }/availability-rules" target="_blank" class="btn-tiny" tabindex="-1" title="Availability">📅</a>
+                    <a href="https://my.hospitable.com/properties/property/${
+                      property.id
+                    }/direct" target="_blank" class="btn-tiny" tabindex="-1" title="Direct">🔗</a>
+                    <a href="https://my.hospitable.com/properties/property/${
+                      property.id
+                    }/messaging-rules" target="_blank" class="btn-tiny" tabindex="-1" title="Messaging">💬</a>
+                    <a href="https://my.hospitable.com/properties/property/${
+                      property.id
+                    }/review-rules" target="_blank" class="btn-tiny" tabindex="-1" title="Reviews">⭐</a>
+                    <a href="https://my.hospitable.com/properties/property/${
+                      property.id
+                    }/team" target="_blank" class="btn-tiny" tabindex="-1" title="Team">👥</a>
+                    <a href="https://my.hospitable.com/properties/property/${
+                      property.id
+                    }/notification-rules" target="_blank" class="btn-tiny" tabindex="-1" title="Notifications">🔔</a>
+                    <a href="https://my.hospitable.com/properties/property/${
+                      property.id
+                    }/task-rules" target="_blank" class="btn-tiny" tabindex="-1" title="Tasks">✅</a>
+                    <a href="https://my.hospitable.com/properties/property/${
+                      property.id
+                    }/custom-codes" target="_blank" class="btn-tiny" tabindex="-1" title="Codes">🔐</a>
+                    <a href="https://my.hospitable.com/properties/property/${
+                      property.id
+                    }/canned-responses" target="_blank" class="btn-tiny" tabindex="-1" title="Responses">💭</a>
+                    <a href="https://my.hospitable.com/properties/property/${
+                      property.id
+                    }/merge-match" target="_blank" class="btn-tiny" tabindex="-1" title="Merge">�</a>
+                </div>
+                
+                <div class="property-status-right">
+                    <span class="property-status ${statusClass}">${statusText}</span>
                 </div>
             </div>
         </div>
@@ -240,6 +284,10 @@ function updateSelectionUI() {
   const count = selectedProperties.size;
   selectedCount.textContent = `${count} selected`;
   copyButton.disabled = count === 0;
+
+  // Show/hide bulk actions and clear button
+  bulkActions.style.display = count > 0 ? "block" : "none";
+  clearButton.style.display = count > 0 ? "inline-block" : "none";
 
   // Show/hide select/deselect all buttons
   const visibleProperties =
@@ -291,6 +339,52 @@ function selectAllVisible() {
 function deselectAll() {
   selectedProperties.clear();
   updateSelectionUI();
+}
+
+// Clear selection (alias for deselectAll)
+function clearSelection() {
+  selectedProperties.clear();
+  updateSelectionUI();
+}
+
+// Open selected properties in Hospitable
+function openSelectedLinks(linkType) {
+  if (selectedProperties.size === 0) return;
+
+  const selectedData = allProperties.filter((property) =>
+    selectedProperties.has(property.id)
+  );
+
+  const linkMap = {
+    details: "details/overview",
+    pricing: "pricing",
+    "availability-rules": "availability-rules",
+    direct: "direct",
+    "messaging-rules": "messaging-rules",
+    "review-rules": "review-rules",
+    team: "team",
+    "notification-rules": "notification-rules",
+    "task-rules": "task-rules",
+    "custom-codes": "custom-codes",
+    "canned-responses": "canned-responses",
+    "merge-match": "merge-match",
+  };
+
+  const urlPath = linkMap[linkType];
+  if (!urlPath) return;
+
+  // Confirm if opening many tabs
+  if (selectedData.length > 10) {
+    const confirm = window.confirm(
+      `This will open ${selectedData.length} new tabs. Continue?`
+    );
+    if (!confirm) return;
+  }
+
+  selectedData.forEach((property) => {
+    const url = `https://my.hospitable.com/properties/property/${property.id}/${urlPath}`;
+    window.open(url, "_blank");
+  });
 }
 
 // Copy selected properties to clipboard
@@ -395,3 +489,4 @@ function debounce(func, wait) {
     timeout = setTimeout(later, wait);
   };
 }
+
