@@ -181,7 +181,7 @@ async function handlePropertiesAPI(request) {
       );
     }
 
-    const apiUrl = `https://public.api.hospitable.com/v2/properties?page=${page}&per_page=${perPage}`;
+    const apiUrl = `https://public.api.hospitable.com/v2/properties?page=${page}&per_page=${perPage}&include=listings,details`;
     const response = await fetch(apiUrl, {
       method: "GET",
       headers: {
@@ -477,16 +477,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
 // Load initial batch of properties
 async function loadInitialProperties() {
-  showLoading("Loading all properties with full details...");
+  showLoading("Loading all properties...");
   currentPage = 1;
   allProperties = [];
 
-  // Auto-load all properties first
+  // Auto-load all properties with full details included
   await loadAllProperties();
-  
-  // Now load full details for all properties
-  await loadAllPropertyDetails();
-  
+
   // Now render everything
   filteredProperties = allProperties;
   renderProperties();
@@ -495,7 +492,7 @@ async function loadInitialProperties() {
   if (allProperties.length > 0) {
     showCompletionMessage();
   }
-}// Auto-load all properties from all pages
+} // Auto-load all properties from all pages
 async function loadAllProperties() {
   let keepLoading = true;
 
@@ -558,46 +555,6 @@ async function loadProperties() {
 
   isLoading = false;
   loadMoreBtn.disabled = false;
-}
-
-// Load full details for all properties
-async function loadAllPropertyDetails() {
-  const total = allProperties.length;
-  let loaded = 0;
-  
-  showLoading(\`Loading full details for all properties... 0/\${total}\`);
-  
-  // Load details in batches to avoid overwhelming the API
-  const batchSize = 5;
-  for (let i = 0; i < allProperties.length; i += batchSize) {
-    const batch = allProperties.slice(i, i + batchSize);
-    
-    await Promise.all(
-      batch.map(async (property) => {
-        try {
-          const response = await fetch(\`/api/property/\${property.id}\`);
-          const data = await response.json();
-          
-          if (response.ok && !data.error) {
-            // Update property with full details
-            const index = allProperties.findIndex(p => p.id === property.id);
-            if (index !== -1) {
-              allProperties[index] = {
-                ...allProperties[index],
-                ...data.data,
-                _detailsLoaded: true,
-              };
-            }
-          }
-        } catch (error) {
-          console.error(\`Failed to load details for property \${property.id}:\`, error);
-        }
-        
-        loaded++;
-        showLoading(\`Loading full details... \${loaded}/\${total}\`);
-      })
-    );
-  }
 }
 
 // Load more properties
@@ -705,10 +662,6 @@ function createPropertyCard(property) {
                 
                 <div class="property-address-compact">
                     📍 \${property.address?.display || "Address not available"}
-                </div>
-                
-                <div class="property-details-status">
-                    \${property._detailsLoaded ? '<span class="details-loaded">✅ Full Details</span>' : ''}
                 </div>
             </div>
         </div>
@@ -1076,7 +1029,7 @@ body {
 
 .property-row {
   display: grid;
-  grid-template-columns: 2fr 1fr 2fr auto;
+  grid-template-columns: 2fr 1fr 2fr;
   gap: 15px;
   align-items: center;
 }
