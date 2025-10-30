@@ -181,7 +181,7 @@ async function handlePropertiesAPI(request) {
       );
     }
 
-    const apiUrl = `https://public.api.hospitable.com/v2/properties?page=${page}&per_page=${perPage}&include=listings,details`;
+    const apiUrl = `https://public.api.hospitable.com/v2/properties?page=${page}&per_page=${perPage}&include=listings,details,bookings,user`;
     const response = await fetch(apiUrl, {
       method: "GET",
       headers: {
@@ -256,7 +256,7 @@ async function handlePropertyDetailsAPI(request) {
       );
     }
 
-    const apiUrl = `https://public.api.hospitable.com/v2/properties/${propertyId}?include=listings,details`;
+    const apiUrl = `https://public.api.hospitable.com/v2/properties/${propertyId}?include=listings,details,bookings,user`;
     const response = await fetch(apiUrl, {
       method: "GET",
       headers: {
