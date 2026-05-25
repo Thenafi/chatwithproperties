@@ -334,6 +334,17 @@ function getFileContent(filename) {
         <strong>Error:</strong> <span id="errorMessage"></span>
       </div>
 
+      <div class="cache-warning-banner" id="cacheWarningBanner" style="display: none;">
+        <div class="cache-warning-content">
+          <span class="warning-icon">⚠️</span>
+          <span class="warning-text" id="cacheWarningText">You are working with cached data. Please wait for fresh data if you are working with sensitive information.</span>
+        </div>
+        <div class="sync-status" id="cacheSyncStatus">
+          <div class="sync-spinner" id="syncSpinner"></div>
+          <span id="syncStatusText">Updating in background...</span>
+        </div>
+      </div>
+
       <div class="controls">
         <input
           type="text"
@@ -553,6 +564,11 @@ let isLoading = false;
 let hasMorePages = true;
 let totalProperties = 0;
 let loadedProperties = 0;
+let isSyncingInBackground = false;
+
+// Caching configuration
+const CACHE_KEY = "hospitable_properties_cache";
+const CACHE_EXPIRY_MS = 72 * 60 * 60 * 1000; // 72 hours
 
 // DOM elements
 const searchBox = document.getElementById("searchBox");
@@ -571,30 +587,191 @@ const errorBanner = document.getElementById("errorBanner");
 const errorMessage = document.getElementById("errorMessage");
 const noResults = document.getElementById("noResults");
 
+// Cache-specific DOM elements
+const cacheWarningBanner = document.getElementById("cacheWarningBanner");
+const cacheWarningText = document.getElementById("cacheWarningText");
+const cacheSyncStatus = document.getElementById("cacheSyncStatus");
+const syncStatusText = document.getElementById("syncStatusText");
+const syncSpinner = document.getElementById("syncSpinner");
+
 // Initialize the application
 document.addEventListener("DOMContentLoaded", function () {
   searchBox.addEventListener("input", debounce(handleSearch, 300));
   loadInitialProperties();
 });
 
+// Cache helper functions
+function getCachedData() {
+  try {
+    const cached = localStorage.getItem(CACHE_KEY);
+    if (!cached) return null;
+    const parsed = JSON.parse(cached);
+    if (!parsed || !parsed.timestamp || !Array.isArray(parsed.properties)) {
+      return null;
+    }
+    // Check if expired (72 hours)
+    if (Date.now() - parsed.timestamp > CACHE_EXPIRY_MS) {
+      localStorage.removeItem(CACHE_KEY);
+      return null;
+    }
+    return parsed;
+  } catch (e) {
+    console.error("Error reading cache:", e);
+    return null;
+  }
+}
+
+function setCachedData(properties, total) {
+  try {
+    const cacheData = {
+      timestamp: Date.now(),
+      properties: properties,
+      total: total
+    };
+    localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
+  } catch (e) {
+    console.error("Error writing cache:", e);
+  }
+}
+
+function updateCacheWarning(timestamp) {
+  if (!timestamp) return;
+  const minutesAgo = Math.floor((Date.now() - timestamp) / 60000);
+  let timeStr = "";
+  if (minutesAgo < 1) {
+    timeStr = "just now";
+  } else if (minutesAgo < 60) {
+    timeStr = \`\${minutesAgo} minute\${minutesAgo === 1 ? "" : "s"} ago\`;
+  } else {
+    const hoursAgo = Math.floor(minutesAgo / 60);
+    timeStr = \`\${hoursAgo} hour\${hoursAgo === 1 ? "" : "s"} ago\`;
+  }
+  cacheWarningText.textContent = \`You are working with cached data (loaded \${timeStr}). Please wait for fresh data if you are working with sensitive information.\`;
+}
+
+// Background sync function
+async function syncPropertiesInBackground() {
+  if (isSyncingInBackground) return;
+  isSyncingInBackground = true;
+
+  // Show background sync status
+  syncSpinner.style.display = "block";
+  syncStatusText.textContent = "Updating in background...";
+  cacheSyncStatus.className = "sync-status";
+  cacheSyncStatus.style.display = "flex";
+
+  let syncProperties = [];
+  let syncPage = 1;
+  let syncHasMore = true;
+  let syncTotal = 0;
+  let syncLoaded = 0;
+
+  try {
+    while (syncHasMore) {
+      // Update sync text
+      syncStatusText.textContent = \`Syncing: \${syncLoaded}/\${syncTotal || "?"}\`;
+      
+      const response = await fetch(
+        \`/api/properties?page=\${syncPage}&per_page=100\`
+      );
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to load properties");
+      }
+
+      if (data.error) {
+        throw new Error(data.message || "API Error");
+      }
+
+      syncTotal = data.meta.total;
+      syncLoaded += data.data.length;
+      syncProperties.push(...data.data);
+
+      syncHasMore = data.meta.current_page < data.meta.last_page;
+      if (syncHasMore) {
+        syncPage++;
+      }
+    }
+
+    // Background sync completed successfully!
+    allProperties = syncProperties;
+    totalProperties = syncTotal;
+    loadedProperties = syncLoaded;
+    
+    // Update local storage
+    setCachedData(allProperties, totalProperties);
+
+    // Refresh UI
+    handleSearch();
+
+    // Show success state in sync status
+    syncSpinner.style.display = "none";
+    syncStatusText.textContent = "✅ Fresh data loaded";
+    cacheSyncStatus.classList.add("success");
+    cacheWarningBanner.classList.add("success");
+    cacheWarningText.textContent = "Data updated successfully in the background!";
+
+    // Automatically hide the warning banner after 3 seconds
+    setTimeout(() => {
+      cacheWarningBanner.style.display = "none";
+    }, 3000);
+
+  } catch (error) {
+    console.error("Background sync error:", error);
+    // Show failure in sync status
+    syncSpinner.style.display = "none";
+    syncStatusText.textContent = "❌ Update failed";
+    cacheWarningText.textContent = \`Background update failed (\${error.message}). Working with cached data.\`;
+  } finally {
+    isSyncingInBackground = false;
+  }
+}
+
 // Load initial batch of properties
 async function loadInitialProperties() {
-  showLoading("Loading all properties...");
-  currentPage = 1;
-  allProperties = [];
+  const cached = getCachedData();
+  
+  if (cached) {
+    console.log("Loading properties from cache");
+    allProperties = cached.properties;
+    totalProperties = cached.total || cached.properties.length;
+    loadedProperties = cached.properties.length;
+    
+    // Render cache immediately
+    filteredProperties = allProperties;
+    renderProperties();
+    hideLoading();
+    
+    // Show cache warning banner
+    cacheWarningBanner.style.display = "flex";
+    cacheWarningBanner.classList.remove("success");
+    updateCacheWarning(cached.timestamp);
+    
+    // Start background sync
+    syncPropertiesInBackground();
+  } else {
+    console.log("No cache or cache expired. Loading fresh properties");
+    showLoading("Loading all properties...");
+    currentPage = 1;
+    allProperties = [];
 
-  // Auto-load all properties with full details included
-  await loadAllProperties();
+    // Auto-load all properties with full details included
+    await loadAllProperties();
 
-  // Now render everything
-  filteredProperties = allProperties;
-  renderProperties();
-  hideLoading();
+    // Now render everything
+    filteredProperties = allProperties;
+    renderProperties();
+    hideLoading();
 
-  if (allProperties.length > 0) {
-    showCompletionMessage();
+    if (allProperties.length > 0) {
+      setCachedData(allProperties, totalProperties);
+      showCompletionMessage();
+    }
   }
-} // Auto-load all properties from all pages
+}
+
+// Auto-load all properties from all pages
 async function loadAllProperties() {
   let keepLoading = true;
 
@@ -768,7 +945,7 @@ function createPropertyCard(property) {
                 <div class="property-quick-links">
                     <a href="https://my.hospitable.com/properties/property/\${
                       property.id
-                    }/details/overview" target="_blank" class="btn-tiny" tabindex="-1" title="Details">📋</a>
+                    }/overview" target="_blank" class="btn-tiny" tabindex="-1" title="Details">📋</a>
                     <a href="https://my.hospitable.com/properties/property/\${
                       property.id
                     }/pricing" target="_blank" class="btn-tiny" tabindex="-1" title="Pricing">💰</a>
@@ -902,7 +1079,7 @@ function openSelectedLinks(linkType) {
   );
 
   const linkMap = {
-    details: "details/overview",
+    details: "overview",
     pricing: "pricing",
     "availability-rules": "availability-rules",
     direct: "direct",
@@ -1172,6 +1349,78 @@ body {
 
 .error-banner.show {
   display: block;
+}
+
+.cache-warning-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #fffbeb;
+  border: 1px solid #fde68a;
+  color: #92400e;
+  padding: 12px 18px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  flex-wrap: wrap;
+  gap: 12px;
+  transition: all 0.3s ease;
+}
+
+.cache-warning-banner.success {
+  background-color: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #166534;
+}
+
+.cache-warning-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 250px;
+}
+
+.warning-icon {
+  font-size: 16px;
+}
+
+.warning-text {
+  font-weight: 500;
+}
+
+.sync-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #ecfeff;
+  border: 1px solid #cffafe;
+  color: #0891b2;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.sync-status.success {
+  background-color: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #166534;
+}
+
+.sync-spinner {
+  width: 12px;
+  height: 12px;
+  border: 2px solid #cffafe;
+  border-top: 2px solid #0891b2;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.sync-status.success .sync-spinner {
+  display: none;
 }
 
 .loading {

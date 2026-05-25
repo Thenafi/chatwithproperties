@@ -20,6 +20,17 @@
         <strong>Error:</strong> <span id="errorMessage"></span>
       </div>
 
+      <div class="cache-warning-banner" id="cacheWarningBanner" style="display: none;">
+        <div class="cache-warning-content">
+          <span class="warning-icon">⚠️</span>
+          <span class="warning-text" id="cacheWarningText">You are working with cached data. Please wait for fresh data if you are working with sensitive information.</span>
+        </div>
+        <div class="sync-status" id="cacheSyncStatus">
+          <div class="sync-spinner" id="syncSpinner"></div>
+          <span id="syncStatusText">Updating in background...</span>
+        </div>
+      </div>
+
       <div class="controls">
         <input
           type="text"
